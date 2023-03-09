@@ -238,6 +238,7 @@ namespace isobus
 		bool loopInvalidated = false;
 		do
 		{
+			loopInvalidated = false;
 			for (auto repetitionCallback = repetitionCallbacks.begin(); repetitionCallback != repetitionCallbacks.end(); repetitionCallback++)
 			{
 				if (updateTimestamp_us >= repetitionCallback->lastCall + repetitionCallback->repetitionRate)
@@ -248,7 +249,8 @@ namespace isobus
 					repetitionCallback->lastCall += repetitionCallback->repetitionRate;
 					// The time has expired, call the callback.
 					uint64_t newUS = 1000ULL * repetitionCallback->callbackFunction(repetitionCallback->pgn, repetitionCallback->repetitionRate / 1000, repetitionCallback->parent);
-					// A repetition callback might remove itself by returning 0, thus invalidating the iterator.
+					// A repetition callback might remove itself by returning 0, thus invalidating
+					// the iterator.
 					if (0 == newUS)
 					{
 						loopInvalidated = true;
@@ -261,7 +263,6 @@ namespace isobus
 					}
 				}
 			}
-			loopInvalidated = false;
 		}
 		while (loopInvalidated);
 	}
