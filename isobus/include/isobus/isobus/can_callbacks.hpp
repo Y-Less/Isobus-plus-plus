@@ -53,6 +53,10 @@ namespace isobus
 	                                                    ControlFunction *requestingControlFunction,
 	                                                    std::uint32_t repetitionRate,
 	                                                    void *parentPointer);
+	/// @brief A callback for handling the repetition of a specific PGN
+	typedef bool (*PGNRepetitionCallback)(std::uint32_t parameterGroupNumber,
+	                                                    std::uint32_t repetitionRate,
+	                                                    void *parentPointer);
 
 	//================================================================================================
 	/// @class ParameterGroupNumberCallbackData

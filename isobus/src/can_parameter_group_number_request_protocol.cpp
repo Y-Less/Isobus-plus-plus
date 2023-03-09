@@ -143,6 +143,31 @@ namespace isobus
 		}
 		return retVal;
 	}
+	
+	bool ParameterGroupNumberRequestProtocol::register_repetition_callback(std::uint32_t repetitionRateMS, std::uint32_t pgn, PGNRepetitionCallback callback, void *parentPointer)
+	{
+		PGNRepetitionCallbackInfo repetitionCallback(repetitionRateMS, callback, pgn, parentPointer);
+		bool retVal = false;
+		const std::lock_guard<std::mutex> lock(pgnRequestMutex);
+
+		if (nullptr != callback)
+		{
+			auto it = std::find(repetitionCallbacks.begin(), repetitionCallbacks.end(), repetitionCallback);
+			if (repetitionCallbacks.end() == it)
+			{
+				// Doesn't exist, create it.
+				repetitionCallbacks.push_back(repetitionCallback);
+				retVal = true;
+			}
+			else if (it->repetitionRate != repetitionRateMS)
+			{
+				// Does exist, update it.
+				it->repetitionRate = repetitionRateMS;
+				retVal = true;
+			}
+		}
+		return retVal;
+	}
 
 	bool ParameterGroupNumberRequestProtocol::remove_pgn_request_callback(std::uint32_t pgn, PGNRequestCallback callback, void *parentPointer)
 	{
@@ -171,6 +196,23 @@ namespace isobus
 		if (repetitionRateCallbacks.end() != callbackLocation)
 		{
 			repetitionRateCallbacks.erase(callbackLocation);
+			retVal = true;
+		}
+		return retVal;
+	}
+	
+	bool ParameterGroupNumberRequestProtocol::remove_repetition_callback(std::uint32_t pgn, PGNRepetitionCallback callback, void *parentPointer)
+	{
+		// Rate is ignored in comparisons.
+		PGNRepetitionCallbackInfo repetitionCallback(0, callback, pgn, parentPointer);
+		bool retVal = false;
+		const std::lock_guard<std::mutex> lock(pgnRequestMutex);
+
+		auto callbackLocation = find(repetitionCallbacks.begin(), repetitionCallbacks.end(), repetitionCallback);
+
+		if (repetitionCallbacks.end() != callbackLocation)
+		{
+			repetitionCallbacks.erase(callbackLocation);
 			retVal = true;
 		}
 		return retVal;
@@ -210,6 +252,11 @@ namespace isobus
 	}
 
 	bool ParameterGroupNumberRequestProtocol::PGNRequestForRepetitionRateCallbackInfo::operator==(const PGNRequestForRepetitionRateCallbackInfo &obj)
+	{
+		return ((obj.callbackFunction == this->callbackFunction) && (obj.pgn == this->pgn) && (obj.parent == this->parent));
+	}
+	
+	bool ParameterGroupNumberRequestProtocol::PGNRepetitionCallbackInfo::operator==(const PGNRepetitionCallbackInfo &obj)
 	{
 		return ((obj.callbackFunction == this->callbackFunction) && (obj.pgn == this->pgn) && (obj.parent == this->parent));
 	}
