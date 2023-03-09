@@ -241,12 +241,13 @@ namespace isobus
 			loopInvalidated = false;
 			for (auto repetitionCallback = repetitionCallbacks.begin(); repetitionCallback != repetitionCallbacks.end(); repetitionCallback++)
 			{
-				if (updateTimestamp_us >= repetitionCallback->lastCall + repetitionCallback->repetitionRate)
+				uint64_t nextCall = repetitionCallback->lastCall + repetitionCallback->repetitionRate;
+				if (updateTimestamp_us >= nextCall)
 				{
 					// Don't set the last call to `updateTimestamp_us`, which is technically the
 					// time it was called, but to the theoretically correct "next" time to avoid
 					// jitter.
-					repetitionCallback->lastCall += repetitionCallback->repetitionRate;
+					repetitionCallback->lastCall = nextCall;
 					// The time has expired, call the callback.
 					uint64_t newUS = 1000ULL * repetitionCallback->callbackFunction(repetitionCallback->pgn, repetitionCallback->repetitionRate / 1000, repetitionCallback->parent);
 					// A repetition callback might remove itself by returning 0, thus invalidating
