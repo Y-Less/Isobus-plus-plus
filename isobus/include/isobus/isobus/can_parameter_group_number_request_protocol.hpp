@@ -169,11 +169,11 @@ namespace isobus
 		{
 		public:
 			/// @brief Constructor for PGNRepetitionCallbackInfo
-			/// @param[in] repetitionRateMS How often to call the callback in MS
+			/// @param[in] repetitionRateUS How often to call the callback in uS
 			/// @param[in] callback A PGNRepetitionCallback
 			/// @param[in] parameterGroupNumber The PGN associcated with the callback
 			/// @param[in] parentPointer Pointer to the class that registered the callback, or `nullptr`
-			PGNRepetitionCallbackInfo(std::uint32_t repetitionRateMS, PGNRepetitionCallback callback, std::uint32_t parameterGroupNumber, void *parentPointer);
+			PGNRepetitionCallbackInfo(std::uint64_t repetitionRateUS, PGNRepetitionCallback callback, std::uint32_t parameterGroupNumber, void *parentPointer);
 
 			/// @brief A utility function for determining if the data in the object is equal to another object
 			/// @details The objects are the same if the pgn and callbackFunction both match, NOT the rate
@@ -182,8 +182,8 @@ namespace isobus
 			bool operator==(const PGNRepetitionCallbackInfo &obj);
 
 			PGNRepetitionCallback callbackFunction; ///< The actual callback
-			std::uint32_t repetitionRate; ///< How often to call the callback
-			std::uint32_t remainingMS; ///< How long before the next call?
+			std::uint64_t repetitionRate; ///< How often to call the callback, in us
+			std::uint64_t lastCall; ///< When was the last call, in us?
 			std::uint32_t pgn; ///< The PGN associated with the callback
 			void *parent; ///< Pointer to the class that registered the callback, or `nullptr`
 		};

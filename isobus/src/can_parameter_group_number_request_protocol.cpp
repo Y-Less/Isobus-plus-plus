@@ -12,6 +12,7 @@
 #include "isobus/isobus/can_general_parameter_group_numbers.hpp"
 #include "isobus/isobus/can_stack_logger.hpp"
 #include "isobus/utility/to_string.hpp"
+#include "isobus/utility/system_timing.hpp"
 
 #include <algorithm>
 
@@ -146,7 +147,8 @@ namespace isobus
 	
 	bool ParameterGroupNumberRequestProtocol::register_repetition_callback(std::uint32_t repetitionRateMS, std::uint32_t pgn, PGNRepetitionCallback callback, void *parentPointer)
 	{
-		PGNRepetitionCallbackInfo repetitionCallback(repetitionRateMS, callback, pgn, parentPointer);
+		uint64_t repetitionRateUS = (uint64_t)repetitionRateMS * 1000ULL;
+		PGNRepetitionCallbackInfo repetitionCallback(repetitionRateUS, callback, pgn, parentPointer);
 		bool retVal = false;
 		const std::lock_guard<std::mutex> lock(pgnRequestMutex);
 
@@ -159,10 +161,10 @@ namespace isobus
 				repetitionCallbacks.push_back(repetitionCallback);
 				retVal = true;
 			}
-			else if (it->repetitionRate != repetitionRateMS)
+			else if (it->repetitionRate != repetitionRateUS)
 			{
 				// Does exist, update it.
-				it->repetitionRate = repetitionRateMS;
+				it->repetitionRate = repetitionRateUS;
 				retVal = true;
 			}
 		}
@@ -230,6 +232,20 @@ namespace isobus
 
 	void ParameterGroupNumberRequestProtocol::update(CANLibBadge<CANNetworkManager>)
 	{
+		uint64_t updateTimestamp_us = SystemTiming::get_timestamp_us();
+		// Check if any repetition callbacks need to be called.
+		const std::lock_guard<std::mutex> lock(pgnRequestMutex);
+
+		for (auto &repetitionCallback : repetitionCallbacks)
+		{
+			if ((repetitionCallback.))
+			if (((repetitionCallback.pgn == requestedPGN) ||
+			     (static_cast<std::uint32_t>(isobus::CANLibParameterGroupNumber::Any) == repetitionCallback.pgn)) &&
+			    (repetitionCallback.callbackFunction(requestedPGN, message->get_source_control_function(), requested, repetitionCallback.parent)))
+			{
+				break;
+			}
+		}
 	}
 
 	ParameterGroupNumberRequestProtocol::PGNRequestCallbackInfo::PGNRequestCallbackInfo(PGNRequestCallback callback, std::uint32_t parameterGroupNumber, void *parentPointer) :
@@ -241,6 +257,15 @@ namespace isobus
 
 	ParameterGroupNumberRequestProtocol::PGNRequestForRepetitionRateCallbackInfo::PGNRequestForRepetitionRateCallbackInfo(PGNRequestForRepetitionRateCallback callback, std::uint32_t parameterGroupNumber, void *parentPointer) :
 	  callbackFunction(callback),
+	  pgn(parameterGroupNumber),
+	  parent(parentPointer)
+	{
+	}
+	
+	ParameterGroupNumberRequestProtocol::PGNRepetitionCallbackInfo::PGNRepetitionCallbackInfo(std::uint64_t repetitionRateUS, PGNRepetitionCallback callback, std::uint32_t parameterGroupNumber, void *parentPointer) :
+	  callbackFunction(callback),
+	  repetitionRate(repetitionRateUS),
+	  lastCall(0),
 	  pgn(parameterGroupNumber),
 	  parent(parentPointer)
 	{
