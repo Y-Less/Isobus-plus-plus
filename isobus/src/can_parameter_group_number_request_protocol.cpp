@@ -235,28 +235,35 @@ namespace isobus
 		uint64_t updateTimestamp_us = SystemTiming::get_timestamp_us();
 		// Check if any repetition callbacks need to be called.
 		const std::lock_guard<std::mutex> lock(pgnRequestMutex);
-		bool calledSomething = false;
+		bool loopInvalidated = false;
 		do
 		{
-			for (auto &repetitionCallback : repetitionCallbacks)
+			for (auto repetitionCallback = repetitionCallbacks.begin(); repetitionCallback != repetitionCallbacks.end(); repetitionCallback++)
 			{
-				if (updateTimestamp_us >= repetitionCallback.lastCall + repetitionCallback.repetitionRate)
+				if (updateTimestamp_us >= repetitionCallback->lastCall + repetitionCallback->repetitionRate)
 				{
 					// Don't set the last call to `updateTimestamp_us`, which is technically the
 					// time it was called, but to the theoretically correct "next" time to avoid
 					// jitter.
-					repetitionCallback.lastCall += repetitionCallback.repetitionRate;
+					repetitionCallback->lastCall += repetitionCallback->repetitionRate;
 					// The time has expired, call the callback.
-					repetitionCallback.callbackFunction(repetitionCallback.pgn, repetitionCallback.repetitionRate / 1000, repetitionCallback.parent);
-					// A repetition callback might remove itself, thus invalidating the iterator.
-					// All callbacks can do this, but most end the loop on the first valid result.
-					calledSomething = true;
-					break;
+					uint64_t newUS = 1000ULL * repetitionCallback->callbackFunction(repetitionCallback->pgn, repetitionCallback->repetitionRate / 1000, repetitionCallback->parent);
+					// A repetition callback might remove itself by returning 0, thus invalidating the iterator.
+					if (0 == newUS)
+					{
+						loopInvalidated = true;
+						repetitionCallbacks.erase(repetitionCallback);
+						break;
+					}
+					else
+					{
+						repetitionCallback->repetitionRate = newUS;
+					}
 				}
 			}
-			calledSomething = false;
+			loopInvalidated = false;
 		}
-		while (calledSomething);
+		while (loopInvalidated);
 	}
 
 	ParameterGroupNumberRequestProtocol::PGNRequestCallbackInfo::PGNRequestCallbackInfo(PGNRequestCallback callback, std::uint32_t parameterGroupNumber, void *parentPointer) :
