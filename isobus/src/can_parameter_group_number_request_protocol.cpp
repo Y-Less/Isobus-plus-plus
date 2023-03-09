@@ -231,14 +231,14 @@ namespace isobus
 						std::vector<std::uint8_t> &data = message->get_data();
 						std::uint32_t requestedPGN = data[0];
 						requestedPGN |= (static_cast<std::uint32_t>(data[1]) << 8);
-						requestedPGN |= (static_cast<std::uint32_t>(data[2]) << 8);
+						requestedPGN |= (static_cast<std::uint32_t>(data[2]) << 16);
 
 						std::uint16_t requestedRate = data[3];
 						requestedRate |= (static_cast<std::uint16_t>(data[4]) << 8);
 
 						const std::lock_guard<std::mutex> lock(pgnRequestMutex);
 
-						for (auto repetitionRateCallback : repetitionRateCallbacks)
+						for (auto &repetitionRateCallback : repetitionRateCallbacks)
 						{
 							if (((repetitionRateCallback.pgn == requestedPGN) ||
 							     (static_cast<std::uint32_t>(isobus::CANLibParameterGroupNumber::Any) == repetitionRateCallback.pgn)) &&
@@ -270,11 +270,11 @@ namespace isobus
 						std::vector<std::uint8_t> &data = message->get_data();
 						std::uint32_t requestedPGN = data[0];
 						requestedPGN |= (static_cast<std::uint32_t>(data[1]) << 8);
-						requestedPGN |= (static_cast<std::uint32_t>(data[2]) << 8);
+						requestedPGN |= (static_cast<std::uint32_t>(data[2]) << 16);
 
 						const std::lock_guard<std::mutex> lock(pgnRequestMutex);
 
-						for (auto pgnRequestCallback : pgnRequestCallbacks)
+						for (auto &pgnRequestCallback : pgnRequestCallbacks)
 						{
 							if (((pgnRequestCallback.pgn == requestedPGN) ||
 							     (static_cast<std::uint32_t>(isobus::CANLibParameterGroupNumber::Any) == pgnRequestCallback.pgn)) &&
