@@ -235,17 +235,28 @@ namespace isobus
 		uint64_t updateTimestamp_us = SystemTiming::get_timestamp_us();
 		// Check if any repetition callbacks need to be called.
 		const std::lock_guard<std::mutex> lock(pgnRequestMutex);
-
-		for (auto &repetitionCallback : repetitionCallbacks)
+		bool calledSomething = false;
+		do
 		{
-			if ((repetitionCallback.))
-			if (((repetitionCallback.pgn == requestedPGN) ||
-			     (static_cast<std::uint32_t>(isobus::CANLibParameterGroupNumber::Any) == repetitionCallback.pgn)) &&
-			    (repetitionCallback.callbackFunction(requestedPGN, message->get_source_control_function(), requested, repetitionCallback.parent)))
+			for (auto &repetitionCallback : repetitionCallbacks)
 			{
-				break;
+				if (updateTimestamp_us >= repetitionCallback.lastCall + repetitionCallback.repetitionRate)
+				{
+					// Don't set the last call to `updateTimestamp_us`, which is technically the
+					// time it was called, but to the theoretically correct "next" time to avoid
+					// jitter.
+					repetitionCallback.lastCall += repetitionCallback.repetitionRate;
+					// The time has expired, call the callback.
+					repetitionCallback.callbackFunction(repetitionCallback.pgn, repetitionCallback.repetitionRate / 1000, repetitionCallback.parent);
+					// A repetition callback might remove itself, thus invalidating the iterator.
+					// All callbacks can do this, but most end the loop on the first valid result.
+					calledSomething = true;
+					break;
+				}
 			}
+			calledSomething = false;
 		}
+		while (calledSomething);
 	}
 
 	ParameterGroupNumberRequestProtocol::PGNRequestCallbackInfo::PGNRequestCallbackInfo(PGNRequestCallback callback, std::uint32_t parameterGroupNumber, void *parentPointer) :
