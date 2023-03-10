@@ -80,6 +80,13 @@ namespace isobus
 		/// @returns true if the callback was registered, false if the callback is nullptr or is already registered for the same PGN
 		bool register_request_for_repetition_rate_callback(std::uint32_t pgn, PGNRequestForRepetitionRateCallback callback, void *parentPointer);
 
+		/// @brief Registers a callback for request repititions
+		/// @param[in] pgn The PGN associated with the callback
+		/// @param[in] callback The callback function to remove
+		/// @param[in] parentPointer Generic context variable, usually the `this` pointer of the class that registered the callback
+		/// @returns true if the callback was registered, or the time was updated, false if the callback is nullptr or is already registered for the same PGN
+		bool register_repetition_callback(std::uint32_t repetitionRateMS, std::uint32_t pgn, PGNRepetitionCallback callback, void *parentPointer);
+
 		/// @brief Removes a previously registered PGN request callback
 		/// @param[in] pgn The PGN associated with the callback
 		/// @param[in] callback The callback function to remove
@@ -93,6 +100,13 @@ namespace isobus
 		/// @param[in] parentPointer Generic context variable, usually the `this` pointer of the class that registered the callback
 		/// @returns true if the callback was registered, false if the callback is nullptr or is already registered for the same PGN
 		bool remove_request_for_repetition_rate_callback(std::uint32_t pgn, PGNRequestForRepetitionRateCallback callback, void *parentPointer);
+
+		/// @brief Removes a callback for request repititions
+		/// @param[in] pgn The PGN associated with the callback
+		/// @param[in] callback The callback function to remove
+		/// @param[in] parentPointer Generic context variable, usually the `this` pointer of the class that registered the callback
+		/// @returns true if the callback was registered, false if the callback is nullptr or is already registered for the same PGN
+		bool remove_repetition_callback(std::uint32_t pgn, PGNRepetitionCallback callback, void *parentPointer);
 
 		/// @brief Returns the number of PGN request callbacks that have been registered with this protocol instance
 		/// @returns The number of PGN request callbacks that have been registered with this protocol instance
@@ -133,8 +147,8 @@ namespace isobus
 		class PGNRequestForRepetitionRateCallbackInfo
 		{
 		public:
-			/// @brief Constructor for PGNRequestCallbackInfo
-			/// @param[in] callback A PGNRequestCallback
+			/// @brief Constructor for PGNRequestForRepetitionRateCallbackInfo
+			/// @param[in] callback A PGNRequestForRepetitionRateCallback
 			/// @param[in] parameterGroupNumber The PGN associcated with the callback
 			/// @param[in] parentPointer Pointer to the class that registered the callback, or `nullptr`
 			PGNRequestForRepetitionRateCallbackInfo(PGNRequestForRepetitionRateCallback callback, std::uint32_t parameterGroupNumber, void *parentPointer);
@@ -146,6 +160,30 @@ namespace isobus
 			bool operator==(const PGNRequestForRepetitionRateCallbackInfo &obj);
 
 			PGNRequestForRepetitionRateCallback callbackFunction; ///< The actual callback
+			std::uint32_t pgn; ///< The PGN associated with the callback
+			void *parent; ///< Pointer to the class that registered the callback, or `nullptr`
+		};
+
+		/// @brief A storage class for holding PGN callbacks and their associated PGN
+		class PGNRepetitionCallbackInfo
+		{
+		public:
+			/// @brief Constructor for PGNRepetitionCallbackInfo
+			/// @param[in] repetitionRateUS How often to call the callback in uS
+			/// @param[in] callback A PGNRepetitionCallback
+			/// @param[in] parameterGroupNumber The PGN associcated with the callback
+			/// @param[in] parentPointer Pointer to the class that registered the callback, or `nullptr`
+			PGNRepetitionCallbackInfo(std::uint64_t repetitionRateUS, PGNRepetitionCallback callback, std::uint32_t parameterGroupNumber, void *parentPointer);
+
+			/// @brief A utility function for determining if the data in the object is equal to another object
+			/// @details The objects are the same if the pgn and callbackFunction both match, NOT the rate
+			/// @param[in] obj The object to compare against
+			/// @returns true if the objects have identical data
+			bool operator==(const PGNRepetitionCallbackInfo &obj);
+
+			PGNRepetitionCallback callbackFunction; ///< The actual callback
+			std::uint64_t repetitionRate; ///< How often to call the callback, in us
+			std::uint64_t lastCall; ///< When was the last call, in us?
 			std::uint32_t pgn; ///< The PGN associated with the callback
 			void *parent; ///< Pointer to the class that registered the callback, or `nullptr`
 		};
@@ -199,6 +237,7 @@ namespace isobus
 		std::shared_ptr<InternalControlFunction> myControlFunction; ///< The internal control function that this protocol will send from
 		std::vector<PGNRequestCallbackInfo> pgnRequestCallbacks; ///< A list of all registered PGN callbacks and the PGN associated with each callback
 		std::vector<PGNRequestForRepetitionRateCallbackInfo> repetitionRateCallbacks; ///< A list of all registered request for repetition rate callbacks and the PGN associated with the callback
+		std::vector<PGNRepetitionCallbackInfo> repetitionCallbacks; ///< repetitionRateCallbacks is for the incoming requests, this is for the actual repeat sends
 		std::mutex pgnRequestMutex; ///< A mutex to protect the callback lists
 	};
 }
