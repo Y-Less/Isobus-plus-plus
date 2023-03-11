@@ -486,14 +486,15 @@ namespace isobus
 				// If we still haven't found it, it might be a partner. Check the list of partners.
 				for (std::size_t i = 0; i < PartneredControlFunction::partneredControlFunctionList.size(); i++)
 				{
-					if ((nullptr != PartneredControlFunction::partneredControlFunctionList[i]) &&
-					    (PartneredControlFunction::partneredControlFunctionList[i]->get_can_port() == rxFrame.channel) &&
-					    (PartneredControlFunction::partneredControlFunctionList[i]->check_matches_name(NAME(claimedNAME))))
+					PartneredControlFunction *partner = PartneredControlFunction::partneredControlFunctionList[i];
+					if ((nullptr != partner) &&
+					    (partner->get_can_port() == rxFrame.channel) &&
+					    (partner->check_matches_name(NAME(claimedNAME))))
 					{
-						PartneredControlFunction::partneredControlFunctionList[i]->address = CANIdentifier(rxFrame.identifier).get_source_address();
-						PartneredControlFunction::partneredControlFunctionList[i]->controlFunctionNAME = NAME(claimedNAME);
-						activeControlFunctions.push_back(PartneredControlFunction::partneredControlFunctionList[i]);
-						foundControlFunction = PartneredControlFunction::partneredControlFunctionList[i];
+						partner->address = CANIdentifier(rxFrame.identifier).get_source_address();
+						partner->controlFunctionNAME = NAME(claimedNAME);
+						activeControlFunctions.push_back(partner);
+						foundControlFunction = partner;
 						CANStackLogger::CAN_stack_log(CANStackLogger::LoggingLevel::Debug, "[NM]: A Partner Has Claimed " + isobus::to_string(static_cast<int>(CANIdentifier(rxFrame.identifier).get_source_address())));
 						break;
 					}
