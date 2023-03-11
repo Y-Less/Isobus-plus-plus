@@ -486,6 +486,15 @@ namespace isobus
 			output.resize(size);
 			return size;
 		}
+		
+		std::vector<std::uint8_t> const & get_data()
+		{
+			size_t size = get_written_bytes();
+			// Ensure the data is an accurate size (could have been made larger when writing data 
+			// that was later reverted).
+			buffer.resize(size);
+			return buffer;
+		}
 
 		void reset_read()
 		{
