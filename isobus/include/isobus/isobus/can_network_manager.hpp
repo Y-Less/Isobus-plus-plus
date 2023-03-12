@@ -78,6 +78,10 @@ namespace isobus
 		/// @brief Returns the number of global PGN callbacks that have been registered with the network manager
 		/// @returns The number of global PGN callbacks that have been registered with the network manager
 		std::uint32_t get_number_global_parameter_group_number_callbacks() const;
+		
+		/// @brief Returns the number of control function status update callbacks
+		/// @returns The number of control function status update callbacks that have been registered with the network manager
+		std::uint32_t get_number_control_function_status_update_callbacks() const;
 
 		/// @brief Registers a callback for ANY control function sending the associated PGN
 		/// @details You may pass a destination `InternalControlFunction`, which will filter for only those messages
@@ -134,6 +138,24 @@ namespace isobus
 		/// @param[in] partner Pointer to the partner being deleted
 		void on_partner_deleted(PartneredControlFunction *partner, CANLibBadge<PartneredControlFunction>);
 
+		/// @brief Adds a control function status update callback
+		/// @details You may pass a destination `PartneredControlFunction`, which will filter for only those messages
+		/// that target this source/destination pair (see https://github.com/ad3154/Isobus-plus-plus/issues/206).
+		/// @param[in] callback The callback to call when the control function status is updated
+		/// @param[in] parentPointer A generic context variable that helps identify what object the callback was destined for
+		/// @param[in] controlFunction An optional partnered function to filter updates by
+		/// @returns `true` if the callback was added, otherwise `false`
+		bool add_control_function_status_update_callback(ControlFunctionStatusUpdateCallback callback, void *parentPointer, PartneredControlFunction *controlFunction = nullptr);
+
+		/// @brief Removes a control function status update callback
+		/// @details You may pass a destination `PartneredControlFunction`, which will filter for only those messages
+		/// that target this source/destination pair (see https://github.com/ad3154/Isobus-plus-plus/issues/206).
+		/// @param[in] callback The callback to call when the control function status is updated
+		/// @param[in] parentPointer A generic context variable that helps identify what object the callback was destined for
+		/// @param[in] controlFunction An optional partnered function to filter updates by
+		/// @returns `true` if the callback was removed, otherwise `false`
+		bool remove_control_function_status_update_callback(ControlFunctionStatusUpdateCallback callback, void *parentPointer, PartneredControlFunction *controlFunction = nullptr);
+
 	protected:
 		// Using protected region to allow protocols use of special functions from the network manager
 		friend class AddressClaimStateMachine; ///< Allows the network manager to work closely with the address claiming process
@@ -164,24 +186,6 @@ namespace isobus
 		/// @returns `true` if the callback was removed, otherwise `false`
 		bool remove_protocol_parameter_group_number_callback(std::uint32_t parameterGroupNumber, CANLibCallback callback, void *parentPointer, InternalControlFunction *destinationFunction = nullptr);
 		
-		/// @brief Adds a control function status update callback
-		/// @details You may pass a destination `PartneredControlFunction`, which will filter for only those messages
-		/// that target this source/destination pair (see https://github.com/ad3154/Isobus-plus-plus/issues/206).
-		/// @param[in] callback The callback to call when the control function status is updated
-		/// @param[in] parentPointer A generic context variable that helps identify what object the callback was destined for
-		/// @param[in] controlFunction An optional partnered function to filter updates by
-		/// @returns `true` if the callback was added, otherwise `false`
-		bool add_control_function_status_update_callback(ControlFunctionStatusUpdateCallback callback, void *parentPointer, PartneredControlFunction *controlFunction = nullptr);
-
-		/// @brief Removes a control function status update callback
-		/// @details You may pass a destination `PartneredControlFunction`, which will filter for only those messages
-		/// that target this source/destination pair (see https://github.com/ad3154/Isobus-plus-plus/issues/206).
-		/// @param[in] callback The callback to call when the control function status is updated
-		/// @param[in] parentPointer A generic context variable that helps identify what object the callback was destined for
-		/// @param[in] controlFunction An optional partnered function to filter updates by
-		/// @returns `true` if the callback was removed, otherwise `false`
-		bool remove_control_function_status_update_callback(ControlFunctionStatusUpdateCallback callback, void *parentPointer, PartneredControlFunction *controlFunction = nullptr);
-
 		/// @brief Sends a CAN message using raw addresses. Used only by the stack.
 		/// @param[in] portIndex The CAN channel index to send the message from
 		/// @param[in] sourceAddress The source address to send the CAN message from
@@ -294,6 +298,11 @@ namespace isobus
 		/// @param[in] index The index of the callback to get
 		/// @returns A structure containing the global PGN callback data
 		ParameterGroupNumberCallbackData get_global_parameter_group_number_callback(std::uint32_t index) const;
+		
+		/// @brief Gets a control function status update callback by index
+		/// @param[in] index The index of the callback to get
+		/// @returns A structure containing the control function status update callback data
+		ControlFunctionStatusUpdateCallbackData get_control_function_status_update_callback(std::uint32_t index) const;
 
 		ExtendedTransportProtocolManager extendedTransportProtocol; ///< Static instance of the protocol manager
 		TransportProtocolManager transportProtocol; ///< Static instance of the transport protocol manager
@@ -305,7 +314,7 @@ namespace isobus
 		std::list<CANMessage> receiveMessageList; ///< A queue of Rx messages to process
 		std::vector<ParameterGroupNumberCallbackData> globalParameterGroupNumberCallbacks; ///< A list of all global PGN callbacks
 		std::vector<ParameterGroupNumberCallbackData> anyControlFunctionParameterGroupNumberCallbacks; ///< A list of all global PGN callbacks
-		std::list<ControlFunctionStatusUpdateCallbackData> controlFunctionStatusUpdateCallbacks; ///< A list of CF status update callbacks.
+		std::vector<ControlFunctionStatusUpdateCallbackData> controlFunctionStatusUpdateCallbacks; ///< A list of CF status update callbacks.
 		std::mutex receiveMessageMutex; ///< A mutex for receive messages thread safety
 		std::mutex protocolPGNCallbacksMutex; ///< A mutex for PGN callback thread safety
 		std::mutex anyControlFunctionCallbacksMutex; ///< Mutex to protect the "any CF" callbacks

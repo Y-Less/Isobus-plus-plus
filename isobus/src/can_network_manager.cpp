@@ -66,6 +66,11 @@ namespace isobus
 	{
 		return globalParameterGroupNumberCallbacks.size();
 	}
+	
+	std::uint32_t CANNetworkManager::get_number_control_function_status_update_callbacks() const
+	{
+		return controlFunctionStatusUpdateCallbacks.size();
+	}
 
 	void CANNetworkManager::add_any_control_function_parameter_group_number_callback(std::uint32_t parameterGroupNumber, CANLibCallback callback, void *parent, InternalControlFunction *destinationFunction)
 	{
@@ -249,6 +254,17 @@ namespace isobus
 		}
 		return retVal;
 	}
+	
+	ControlFunctionStatusUpdateCallbackData CANNetworkManager::get_control_function_status_update_callback(std::uint32_t index) const
+	{
+		ControlFunctionStatusUpdateCallbackData retVal(nullptr, 0, nullptr);
+
+		if (index < get_number_control_function_status_update_callbacks())
+		{
+			retVal = controlFunctionStatusUpdateCallbacks[index];
+		}
+		return retVal;
+	}
 
 	void CANNetworkManager::can_lib_process_rx_message(HardwareInterfaceCANFrame &rxFrame, void *)
 	{
@@ -378,7 +394,7 @@ namespace isobus
 
 		if (nullptr != callback)
 		{
-			std::list<ControlFunctionStatusUpdateCallbackData>::iterator callbackLocation;
+			std::vector<ControlFunctionStatusUpdateCallbackData>::iterator callbackLocation;
 			callbackLocation = find(controlFunctionStatusUpdateCallbacks.begin(), controlFunctionStatusUpdateCallbacks.end(), callbackInfo);
 
 			if (controlFunctionStatusUpdateCallbacks.end() != callbackLocation)
