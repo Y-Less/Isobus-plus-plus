@@ -83,7 +83,7 @@ namespace isobus
 			anyControlFunctionParameterGroupNumberCallbacks.erase(callbackLocation);
 		}
 	}
-
+	
 	InternalControlFunction *CANNetworkManager::get_internal_control_function(ControlFunction *controlFunction)
 	{
 		InternalControlFunction *retVal = nullptr;
@@ -348,6 +348,42 @@ namespace isobus
 			if (protocolPGNCallbacks.end() != callbackLocation)
 			{
 				protocolPGNCallbacks.erase(callbackLocation);
+				retVal = true;
+			}
+		}
+		return retVal;
+	}
+
+	bool CANNetworkManager::add_control_function_status_update_callback(ControlFunctionStatusUpdateCallback callback, void *parentPointer, PartneredControlFunction *controlFunction)
+	{
+		bool retVal = false;
+		ControlFunctionStatusUpdateCallbackData callbackInfo(controlFunction, callback, parentPointer);
+
+		const std::lock_guard<std::mutex> lock(cfStatuUpdateCallbacksMutex);
+
+		if ((nullptr != callback) && (controlFunctionStatusUpdateCallbacks.end() == find(controlFunctionStatusUpdateCallbacks.begin(), controlFunctionStatusUpdateCallbacks.end(), callbackInfo)))
+		{
+			controlFunctionStatusUpdateCallbacks.push_back(callbackInfo);
+			retVal = true;
+		}
+		return retVal;
+	}
+
+	bool CANNetworkManager::remove_control_function_status_update_callback(ControlFunctionStatusUpdateCallback callback, void *parentPointer, PartneredControlFunction *controlFunction)
+	{
+		bool retVal = false;
+		ControlFunctionStatusUpdateCallbackData callbackInfo(controlFunction, callback, parentPointer);
+
+		const std::lock_guard<std::mutex> lock(cfStatuUpdateCallbacksMutex);
+
+		if (nullptr != callback)
+		{
+			std::list<ControlFunctionStatusUpdateCallbackData>::iterator callbackLocation;
+			callbackLocation = find(controlFunctionStatusUpdateCallbacks.begin(), controlFunctionStatusUpdateCallbacks.end(), callbackInfo);
+
+			if (controlFunctionStatusUpdateCallbacks.end() != callbackLocation)
+			{
+				controlFunctionStatusUpdateCallbacks.erase(callbackLocation);
 				retVal = true;
 			}
 		}

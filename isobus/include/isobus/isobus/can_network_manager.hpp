@@ -163,6 +163,24 @@ namespace isobus
 		/// @param[in] destinationFunction An optional internal function destination to filter messages by
 		/// @returns `true` if the callback was removed, otherwise `false`
 		bool remove_protocol_parameter_group_number_callback(std::uint32_t parameterGroupNumber, CANLibCallback callback, void *parentPointer, InternalControlFunction *destinationFunction = nullptr);
+		
+		/// @brief Adds a control function status update callback
+		/// @details You may pass a destination `PartneredControlFunction`, which will filter for only those messages
+		/// that target this source/destination pair (see https://github.com/ad3154/Isobus-plus-plus/issues/206).
+		/// @param[in] callback The callback to call when the control function status is updated
+		/// @param[in] parentPointer A generic context variable that helps identify what object the callback was destined for
+		/// @param[in] controlFunction An optional partnered function to filter updates by
+		/// @returns `true` if the callback was added, otherwise `false`
+		bool add_control_function_status_update_callback(ControlFunctionStatusUpdateCallback callback, void *parentPointer, PartneredControlFunction *controlFunction = nullptr);
+
+		/// @brief Removes a control function status update callback
+		/// @details You may pass a destination `PartneredControlFunction`, which will filter for only those messages
+		/// that target this source/destination pair (see https://github.com/ad3154/Isobus-plus-plus/issues/206).
+		/// @param[in] callback The callback to call when the control function status is updated
+		/// @param[in] parentPointer A generic context variable that helps identify what object the callback was destined for
+		/// @param[in] controlFunction An optional partnered function to filter updates by
+		/// @returns `true` if the callback was removed, otherwise `false`
+		bool remove_control_function_status_update_callback(ControlFunctionStatusUpdateCallback callback, void *parentPointer, PartneredControlFunction *controlFunction = nullptr);
 
 		/// @brief Sends a CAN message using raw addresses. Used only by the stack.
 		/// @param[in] portIndex The CAN channel index to send the message from
@@ -287,9 +305,11 @@ namespace isobus
 		std::list<CANMessage> receiveMessageList; ///< A queue of Rx messages to process
 		std::vector<ParameterGroupNumberCallbackData> globalParameterGroupNumberCallbacks; ///< A list of all global PGN callbacks
 		std::vector<ParameterGroupNumberCallbackData> anyControlFunctionParameterGroupNumberCallbacks; ///< A list of all global PGN callbacks
+		std::list<ControlFunctionStatusUpdateCallbackData> controlFunctionStatusUpdateCallbacks; ///< A list of CF status update callbacks.
 		std::mutex receiveMessageMutex; ///< A mutex for receive messages thread safety
 		std::mutex protocolPGNCallbacksMutex; ///< A mutex for PGN callback thread safety
 		std::mutex anyControlFunctionCallbacksMutex; ///< Mutex to protect the "any CF" callbacks
+		std::mutex cfStatuUpdateCallbacksMutex; ///< Mutex to protect the CF status update callbacks
 		std::uint32_t updateTimestamp_ms; ///< Keeps track of the last time the CAN stack was update in milliseconds
 		bool initialized; ///< True if the network manager has been initialized by the update function
 	};
