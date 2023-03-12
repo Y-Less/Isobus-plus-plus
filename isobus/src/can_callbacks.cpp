@@ -39,6 +39,7 @@ namespace isobus
 		mCallback = obj.mCallback;
 		mParameterGroupNumber = obj.mParameterGroupNumber;
 		mParent = obj.mParent;
+		mDestinationFunction = obj.mDestinationFunction;
 		return *this;
 	}
 
@@ -58,6 +59,50 @@ namespace isobus
 	}
 
 	void *ParameterGroupNumberCallbackData::get_parent() const
+	{
+		return mParent;
+	}
+
+	ControlFunctionStatusUpdateCallbackData::ControlFunctionStatusUpdateCallbackData(ControlFunction *controlFunction, ControlFunctionStatusUpdateCallback callback, void *parentPointer) :
+	  mCallback(callback),
+	  mControlFunction(controlFunction),
+	  mParent(parentPointer)
+	{
+	}
+
+	ControlFunctionStatusUpdateCallbackData::ControlFunctionStatusUpdateCallbackData(const ControlFunctionStatusUpdateCallbackData &oldObj)
+	{
+		mCallback = oldObj.mCallback;
+		mControlFunction = oldObj.mControlFunction;
+		mParent = oldObj.mParent;
+	}
+
+	bool ControlFunctionStatusUpdateCallbackData::operator==(const ControlFunctionStatusUpdateCallbackData &obj)
+	{
+		return ((obj.mCallback == this->mCallback) &&
+		        (obj.mControlFunction == this->mControlFunction) &&
+		        (obj.mParent == this->mParent));
+	}
+
+	ControlFunctionStatusUpdateCallbackData &ControlFunctionStatusUpdateCallbackData::operator=(const ControlFunctionStatusUpdateCallbackData &obj)
+	{
+		mCallback = obj.mCallback;
+		mControlFunction = obj.mControlFunction;
+		mParent = obj.mParent;
+		return *this;
+	}
+
+	ControlFunction* ControlFunctionStatusUpdateCallbackData::get_control_function() const
+	{
+		return mControlFunction;
+	}
+
+	ControlFunctionStatusUpdateCallback ControlFunctionStatusUpdateCallbackData::get_callback() const
+	{
+		return mCallback;
+	}
+	
+	void *ControlFunctionStatusUpdateCallbackData::get_parent() const
 	{
 		return mParent;
 	}

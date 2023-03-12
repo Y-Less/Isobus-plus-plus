@@ -58,6 +58,18 @@ namespace isobus
 	                                                    std::uint32_t repetitionRate,
 	                                                    void *parentPointer);
 
+	enum class ControlFunctionStatus
+	{
+		Up = 0,
+		Down = 1,
+		Evicted = 2
+	};
+
+	/// @brief A callback for handling the status changes of (partner) control functions.
+	typedef void (*ControlFunctionStatusUpdateCallback)(ControlFunction *controlFunction,
+	                                                    ControlFunctionStatus status,
+	                                                    void *parentPointer);
+
 	//================================================================================================
 	/// @class ParameterGroupNumberCallbackData
 	///
@@ -106,6 +118,51 @@ namespace isobus
 		std::uint32_t mParameterGroupNumber; ///< The PGN assocuiated with this callback
 		void *mParent; ///< A generic variable that can provide context to which object the callback was meant for
 		InternalControlFunction *mDestinationFunction; ///< An optional filter for source/destination function pairs
+	};
+
+	//================================================================================================
+	/// @class ControlFunctionStatusUpdateCallbackData
+	///
+	/// @brief A storage class to hold data about control function status update callbacks.
+	//================================================================================================
+	class ControlFunctionStatusUpdateCallbackData
+	{
+	public:
+		/// @brief A constructor for holding callback data
+		/// @param[in] controlFunction The optional control function you want to register a callback for
+		/// @param[in] callback The function you want the stack to call when a control function changes status
+		/// @param[in] parentPointer A generic variable that can provide context to which object the callback was meant for
+		ControlFunctionStatusUpdateCallbackData(ControlFunction *controlFunction, ControlFunctionStatusUpdateCallback callback, void *parentPointer);
+
+		/// @brief A copy constructor for holding callback data
+		/// @param[in] oldObj The object to copy from
+		ControlFunctionStatusUpdateCallbackData(const ControlFunctionStatusUpdateCallbackData &oldObj);
+
+		/// @brief Equality operator for this class
+		/// @param[in] obj The object to check equality against
+		/// @returns true if the objects have equivalent data
+		bool operator==(const ControlFunctionStatusUpdateCallbackData &obj);
+
+		/// @brief Assignment operator for this class
+		/// @param[in] obj The object to assign data from
+		/// @returns The lhs of the operator
+		ControlFunctionStatusUpdateCallbackData &operator=(const ControlFunctionStatusUpdateCallbackData &obj);
+
+		/// @brief Returns the control function associated with this callback data
+		/// @returns The control function associated with this callback data, or nullptr
+		ControlFunction *get_control_function() const;
+
+		/// @brief Returns the callback pointer for this data object
+		/// @returns The callback pointer for this data object
+		ControlFunctionStatusUpdateCallback get_callback() const;
+
+		/// @brief Returns the parent pointer for this data object
+		void *get_parent() const;
+
+	private:
+		ControlFunctionStatusUpdateCallback mCallback; ///< The callback that will get called when a control function changes status
+		ControlFunction *mControlFunction; ///< The control function assocuiated with this callback
+		void *mParent; ///< A generic variable that can provide context to which object the callback was meant for
 	};
 } // namespace isobus
 
