@@ -125,6 +125,36 @@ bool NTCANFIFOPlugin::read_frame(isobus::HardwareInterfaceCANFrame &canFrame)
 	{
 		canFrame.dataLength = msgCanMessage.len;
 		memcpy(canFrame.data, msgCanMessage.data, msgCanMessage.len);
+		/*switch (msgCanMessage.len)
+		{
+		case 0:
+			printf("READ: \n");
+			break;
+		case 1:
+			printf("READ: %02x\n", canFrame.data[0]);
+			break;
+		case 2:
+			printf("READ: %02x %02x\n", canFrame.data[0], canFrame.data[1]);
+			break;
+		case 3:
+			printf("READ: %02x %02x %02x\n", canFrame.data[0], canFrame.data[1], canFrame.data[2]);
+			break;
+		case 4:
+			printf("READ: %02x %02x %02x %02x\n", canFrame.data[0], canFrame.data[1], canFrame.data[2], canFrame.data[3]);
+			break;
+		case 5:
+			printf("READ: %02x %02x %02x %02x %02x\n", canFrame.data[0], canFrame.data[1], canFrame.data[2], canFrame.data[3], canFrame.data[4]);
+			break;
+		case 6:
+			printf("READ: %02x %02x %02x %02x %02x %02x\n", canFrame.data[0], canFrame.data[1], canFrame.data[2], canFrame.data[3], canFrame.data[4], canFrame.data[5]);
+			break;
+		case 7:
+			printf("READ: %02x %02x %02x %02x %02x %02x %02x\n", canFrame.data[0], canFrame.data[1], canFrame.data[2], canFrame.data[3], canFrame.data[4], canFrame.data[5], canFrame.data[6]);
+			break;
+		case 8:
+			printf("READ: %02x %02x %02x %02x %02x %02x %02x %02x\n", canFrame.data[0], canFrame.data[1], canFrame.data[2], canFrame.data[3], canFrame.data[4], canFrame.data[5], canFrame.data[6], canFrame.data[7]);
+			break;
+		}*/
 		canFrame.identifier = (msgCanMessage.id & ((1 << 29) - 1));
 		canFrame.isExtendedFrame = (NTCAN_20B_BASE == (msgCanMessage.id & NTCAN_20B_BASE));
 		canFrame.timestamp_us = msgCanMessage.timestamp * 1000000 / timestampFreq + timestampOff;
@@ -146,6 +176,36 @@ bool NTCANFIFOPlugin::write_frame(const isobus::HardwareInterfaceCANFrame &canFr
 	msgCanMessage.id = canFrame.isExtendedFrame ? (canFrame.identifier | NTCAN_20B_BASE) : canFrame.identifier;
 	msgCanMessage.len = canFrame.dataLength;
 	memcpy(msgCanMessage.data, canFrame.data, canFrame.dataLength);
+	/*switch (msgCanMessage.len)
+	{
+	case 0:
+		printf("WRITE: \n");
+		break;
+	case 1:
+		printf("WRITE: %02x\n", canFrame.data[0]);
+		break;
+	case 2:
+		printf("WRITE: %02x %02x\n", canFrame.data[0], canFrame.data[1]);
+		break;
+	case 3:
+		printf("WRITE: %02x %02x %02x\n", canFrame.data[0], canFrame.data[1], canFrame.data[2]);
+		break;
+	case 4:
+		printf("WRITE: %02x %02x %02x %02x\n", canFrame.data[0], canFrame.data[1], canFrame.data[2], canFrame.data[3]);
+		break;
+	case 5:
+		printf("WRITE: %02x %02x %02x %02x %02x\n", canFrame.data[0], canFrame.data[1], canFrame.data[2], canFrame.data[3], canFrame.data[4]);
+		break;
+	case 6:
+		printf("WRITE: %02x %02x %02x %02x %02x %02x\n", canFrame.data[0], canFrame.data[1], canFrame.data[2], canFrame.data[3], canFrame.data[4], canFrame.data[5]);
+		break;
+	case 7:
+		printf("WRITE: %02x %02x %02x %02x %02x %02x %02x\n", canFrame.data[0], canFrame.data[1], canFrame.data[2], canFrame.data[3], canFrame.data[4], canFrame.data[5], canFrame.data[6]);
+		break;
+	case 8:
+		printf("WRITE: %02x %02x %02x %02x %02x %02x %02x %02x\n", canFrame.data[0], canFrame.data[1], canFrame.data[2], canFrame.data[3], canFrame.data[4], canFrame.data[5], canFrame.data[6], canFrame.data[7]);
+		break;
+	}*/
 
 	result = canWriteT(handle, &msgCanMessage, &count, nullptr);
 
