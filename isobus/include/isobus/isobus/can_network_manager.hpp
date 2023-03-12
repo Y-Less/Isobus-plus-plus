@@ -277,6 +277,9 @@ namespace isobus
 		/// @brief Processes the internal receive message queue
 		void process_rx_messages();
 
+		/// @brief Calls any relevant control function status update callbacks.
+		void process_control_function_status_update(ControlFunction *controlFunction, ControlFunctionStatus status);
+
 		/// @brief Sends a CAN message using raw addresses. Used only by the stack.
 		/// @param[in] portIndex The CAN channel index to send the message from
 		/// @param[in] sourceAddress The source address to send the CAN message from

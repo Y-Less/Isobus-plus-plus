@@ -66,10 +66,25 @@ namespace isobus
 	{
 		return globalParameterGroupNumberCallbacks.size();
 	}
-	
+
 	std::uint32_t CANNetworkManager::get_number_control_function_status_update_callbacks() const
 	{
 		return controlFunctionStatusUpdateCallbacks.size();
+	}
+
+	void CANNetworkManager::process_control_function_status_update(ControlFunction* controlFunction, ControlFunctionStatus status)
+	{
+		const std::lock_guard<std::mutex> lock(cfStatuUpdateCallbacksMutex);
+
+		for (auto &callback : controlFunctionStatusUpdateCallbacks)
+		{
+			if ((nullptr != callback.get_callback()) &&
+			    ((nullptr == callback.get_control_function()) ||
+			    (controlFunction == callback.get_control_function())))
+			{
+				(callback.get_callback())(controlFunction, status, callback.get_parent());
+			}
+		}
 	}
 
 	void CANNetworkManager::add_any_control_function_parameter_group_number_callback(std::uint32_t parameterGroupNumber, CANLibCallback callback, void *parent, InternalControlFunction *destinationFunction)
@@ -429,6 +444,7 @@ namespace isobus
 				// Need to evict them from the table
 				controlFunctionTable[CANPort][messageSourceAddress]->address = NULL_CAN_ADDRESS;
 				controlFunctionTable[CANPort][messageSourceAddress] = nullptr;
+				process_control_function_status_update(controlFunctionTable[CANPort][messageSourceAddress], ControlFunctionStatus::Evicted);
 			}
 
 			// Now, check for either a free spot in the table or recent eviction and populate if needed
@@ -442,6 +458,7 @@ namespace isobus
 						// ECU has claimed since the last update, add it to the table
 						controlFunctionTable[CANPort][messageSourceAddress] = currentControlFunction;
 						currentControlFunction->address = messageSourceAddress;
+						process_control_function_status_update(currentControlFunction, ControlFunctionStatus::Up);
 						break;
 					}
 				}
@@ -460,6 +477,7 @@ namespace isobus
 				// Need to evict them from the table
 				controlFunctionTable[CANPort][claimedAddress]->address = NULL_CAN_ADDRESS;
 				controlFunctionTable[CANPort][claimedAddress] = nullptr;
+				process_control_function_status_update(controlFunctionTable[CANPort][claimedAddress], ControlFunctionStatus::Evicted);
 			}
 
 			// Now, check for either a free spot in the table or recent eviction and populate if needed
@@ -473,6 +491,7 @@ namespace isobus
 						// ECU has claimed since the last update, add it to the table
 						controlFunctionTable[CANPort][claimedAddress] = currentControlFunction;
 						currentControlFunction->address = claimedAddress;
+						//process_control_function_status_update(currentControlFunction, ControlFunctionStatus::Evicted);
 						break;
 					}
 				}
@@ -512,6 +531,7 @@ namespace isobus
 				{
 					// If this CF has the same address as the one claiming, we need set it to 0xFE (null address)
 					activeControlFunctions[i]->address = CANIdentifier::NULL_ADDRESS;
+					process_control_function_status_update(activeControlFunctions[i], ControlFunctionStatus::Down);
 				}
 			}
 
@@ -530,6 +550,7 @@ namespace isobus
 				{
 					// If this CF has the same address as the one claiming, we need set it to 0xFE (null address)
 					inactiveControlFunctions[i]->address = CANIdentifier::NULL_ADDRESS;
+					process_control_function_status_update(inactiveControlFunctions[i], ControlFunctionStatus::Down);
 				}
 			}
 
@@ -548,6 +569,7 @@ namespace isobus
 						activeControlFunctions.push_back(partner);
 						foundControlFunction = partner;
 						CANStackLogger::CAN_stack_log(CANStackLogger::LoggingLevel::Debug, "[NM]: A Partner Has Claimed " + isobus::to_string(static_cast<int>(CANIdentifier(rxFrame.identifier).get_source_address())));
+						process_control_function_status_update(partner, ControlFunctionStatus::Up);
 						break;
 					}
 				}
@@ -560,6 +582,7 @@ namespace isobus
 				}
 			}
 
+			// Superfluous?
 			if (nullptr != foundControlFunction)
 			{
 				foundControlFunction->address = CANIdentifier(rxFrame.identifier).get_source_address();
@@ -594,6 +617,7 @@ namespace isobus
 							partner->controlFunctionNAME = (*currentInactiveControlFunction)->get_NAME();
 							partner->initialized = true;
 							inactiveControlFunctions.erase(currentInactiveControlFunction);
+							process_control_function_status_update(partner, ControlFunctionStatus::Up);
 							break;
 						}
 					}
@@ -615,7 +639,9 @@ namespace isobus
 								partner->initialized = true;
 								controlFunctionTable[partner->get_can_port()][partner->address] = partner;
 								activeControlFunctions.erase(currentActiveControlFunction);
+								process_control_function_status_update(*currentActiveControlFunction, ControlFunctionStatus::Down);
 								activeControlFunctions.push_back(partner);
+								process_control_function_status_update(partner, ControlFunctionStatus::Up);
 								break;
 							}
 						}
