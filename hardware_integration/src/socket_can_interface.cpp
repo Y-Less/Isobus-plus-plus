@@ -140,16 +140,47 @@ bool SocketCANInterface::read_frame(isobus::HardwareInterfaceCANFrame &canFrame)
 				{
 					canFrame.identifier = (txFrame.can_id & CAN_EFF_MASK);
 					canFrame.isExtendedFrame = true;
+					printf("LONG: %d = PGN %d\n", canFrame.identifier, (canFrame.identifier >> 8) & 0x0003FFFF);
 				}
 				else
 				{
 					canFrame.identifier = (txFrame.can_id & CAN_SFF_MASK);
 					canFrame.isExtendedFrame = false;
+					printf("SHORT:\n");
 				}
 				canFrame.dataLength = txFrame.can_dlc;
 				memset(canFrame.data, 0, sizeof(canFrame.data));
 				memcpy(canFrame.data, txFrame.data, canFrame.dataLength);
-
+				switch (canFrame.dataLength)
+				{
+				case 0:
+					printf("READ: \n");
+					break;
+				case 1:
+					printf("READ: %02x\n", canFrame.data[0]);
+					break;
+				case 2:
+					printf("READ: %02x %02x\n", canFrame.data[0], canFrame.data[1]);
+					break;
+				case 3:
+					printf("READ: %02x %02x %02x\n", canFrame.data[0], canFrame.data[1], canFrame.data[2]);
+					break;
+				case 4:
+					printf("READ: %02x %02x %02x %02x\n", canFrame.data[0], canFrame.data[1], canFrame.data[2], canFrame.data[3]);
+					break;
+				case 5:
+					printf("READ: %02x %02x %02x %02x %02x\n", canFrame.data[0], canFrame.data[1], canFrame.data[2], canFrame.data[3], canFrame.data[4]);
+					break;
+				case 6:
+					printf("READ: %02x %02x %02x %02x %02x %02x\n", canFrame.data[0], canFrame.data[1], canFrame.data[2], canFrame.data[3], canFrame.data[4], canFrame.data[5]);
+					break;
+				case 7:
+					printf("READ: %02x %02x %02x %02x %02x %02x %02x\n", canFrame.data[0], canFrame.data[1], canFrame.data[2], canFrame.data[3], canFrame.data[4], canFrame.data[5], canFrame.data[6]);
+					break;
+				case 8:
+					printf("READ: %02x %02x %02x %02x %02x %02x %02x %02x\n", canFrame.data[0], canFrame.data[1], canFrame.data[2], canFrame.data[3], canFrame.data[4], canFrame.data[5], canFrame.data[6], canFrame.data[7]);
+					break;
+				}
 				for (struct cmsghdr *pControlMessage = CMSG_FIRSTHDR(&message); (nullptr != pControlMessage) && (SOL_SOCKET == pControlMessage->cmsg_level); pControlMessage = CMSG_NXTHDR(&message, pControlMessage))
 				{
 					switch (pControlMessage->cmsg_type)
