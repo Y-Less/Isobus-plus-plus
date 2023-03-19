@@ -220,6 +220,65 @@ namespace isobus
 			return true;
 		}
 
+		template<typename T>
+		struct WriterHelper
+		{
+			static bool write(ParameterGroupBuilder* that, T const &data)
+			{
+				return that->write_bits((std::uint8_t const *)&data, sizeof(T) * 8);
+			}
+		};
+
+		template<>
+		struct WriterHelper<bool>
+		{
+			static bool write(ParameterGroupBuilder *that, bool const &data)
+			{
+				std::uint8_t bits = data ? 255 : 0;
+				return that->write_bits(&bits, 1);
+			}
+		};
+
+		template<>
+		struct WriterHelper<char const *>
+		{
+			static bool write(ParameterGroupBuilder *that, char const *const &data)
+			{
+				// What should the default for including NULL be?
+				return that->write((std::uint8_t const *)data, false);
+			}
+		};
+
+		template<>
+		struct WriterHelper<char *>
+		{
+			static bool write(ParameterGroupBuilder *that, char *const &data)
+			{
+				// What should the default for including NULL be?
+				return that->write((std::uint8_t const *)data, false);
+			}
+		};
+
+		template<>
+		struct WriterHelper<std::uint8_t const *>
+		{
+			static bool write(ParameterGroupBuilder *that, std::uint8_t const *const &data)
+			{
+				// What should the default for including NULL be?
+				return that->write((std::uint8_t const *)data, false);
+			}
+		};
+
+		template<>
+		struct WriterHelper<std::uint8_t *>
+		{
+			static bool write(ParameterGroupBuilder *that, std::uint8_t *const &data)
+			{
+				// What should the default for including NULL be?
+				return that->write((std::uint8_t const *)data, false);
+			}
+		};
+
 	public:
 		ParameterGroupBuilder() :
 		  buffer()
@@ -256,48 +315,13 @@ namespace isobus
 		template <typename T>
 		bool write(T const & data)
 		{
-			return write_bits((std::uint8_t const *)&data, sizeof (T) * 8);
+			return WriterHelper<T>::write(this, data);
 		}
 
 		template <typename T>
 		bool write(T const & data, std::size_t bits)
 		{
 			return write_bits((std::uint8_t const *)&data, bits);
-		}
-
-		template <>
-		bool write<bool>(bool const & data)
-		{
-			std::uint8_t bits = data ? 255 : 0;
-			return write_bits(&bits, 1);
-		}
-
-		template <>
-		bool write<char const *>(char const * const & data)
-		{
-			// What should the default for including NULL be?
-			return write((std::uint8_t const *)data, false);
-		}
-
-		template <>
-		bool write<char *>(char * const & data)
-		{
-			// What should the default for including NULL be?
-			return write((std::uint8_t const *)data, false);
-		}
-
-		template <>
-		bool write<std::uint8_t const *>(std::uint8_t const * const & data)
-		{
-			// What should the default for including NULL be?
-			return write((std::uint8_t const *)data, false);
-		}
-
-		template <>
-		bool write<std::uint8_t *>(std::uint8_t * const & data)
-		{
-			// What should the default for including NULL be?
-			return write((std::uint8_t const *)data, false);
 		}
 
 		bool write(char const * data, bool includeNull)
