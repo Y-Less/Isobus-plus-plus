@@ -4,6 +4,18 @@
 
 namespace isobus
 {
+	namespace detail
+	{
+		template<typename T>
+		struct WriterHelper;
+
+		template<typename T>
+		struct ReadHelper;
+
+		template<typename T>
+		struct BitsHelper;
+	};
+
 	// Note that this class currently only works for packets eight bytes or fewer, because that is
 	// all the use-cases I needed.  The spec has a whole section on how data can span byte
 	// boundaries, and how to align the bits when a data-type that is not a multiple of eight bits
@@ -221,176 +233,13 @@ namespace isobus
 		}
 
 		template<typename T>
-		struct WriterHelper
-		{
-			static bool write(ParameterGroupBuilder* that, T const &data)
-			{
-				return that->write_bits((std::uint8_t const *)&data, sizeof(T) * 8);
-			}
-		};
-
-		template<>
-		struct WriterHelper<bool>
-		{
-			static bool write(ParameterGroupBuilder *that, bool const &data)
-			{
-				std::uint8_t bits = data ? 255 : 0;
-				return that->write_bits(&bits, 1);
-			}
-		};
-
-		template<>
-		struct WriterHelper<char const *>
-		{
-			static bool write(ParameterGroupBuilder *that, char const *const &data)
-			{
-				// What should the default for including NULL be?
-				return that->write((std::uint8_t const *)data, false);
-			}
-		};
-
-		template<>
-		struct WriterHelper<char *>
-		{
-			static bool write(ParameterGroupBuilder *that, char *const &data)
-			{
-				// What should the default for including NULL be?
-				return that->write((std::uint8_t const *)data, false);
-			}
-		};
-
-		template<>
-		struct WriterHelper<std::uint8_t const *>
-		{
-			static bool write(ParameterGroupBuilder *that, std::uint8_t const *const &data)
-			{
-				// What should the default for including NULL be?
-				return that->write((std::uint8_t const *)data, false);
-			}
-		};
-
-		template<>
-		struct WriterHelper<std::uint8_t *>
-		{
-			static bool write(ParameterGroupBuilder *that, std::uint8_t *const &data)
-			{
-				// What should the default for including NULL be?
-				return that->write((std::uint8_t const *)data, false);
-			}
-		};
+		friend struct detail::WriterHelper;
 
 		template<typename T>
-		struct ReadHelper
-		{
-			static bool read(ParameterGroupBuilder *that, T &data)
-			{
-				return that->read_bits((std::uint8_t *)&data, sizeof(T) * 8);
-			}
-		};
-
-		template<>
-		struct ReadHelper<bool>
-		{
-			static bool read(ParameterGroupBuilder *that, bool &data)
-			{
-				std::uint8_t bits = 0;
-				if (that->read_bits(&bits, 1))
-				{
-					data = !!bits;
-					return true;
-				}
-				data = false;
-				return false;
-			}
-		};
-
-		template<>
-		struct ReadHelper<char *>
-		{
-			static bool read(ParameterGroupBuilder *that, char *&data)
-			{
-				// Read until NULL.
-				return ReadHelper<std::uint8_t *>::read(that, (std::uint8_t *&)data);
-			}
-		};
-
-		template<>
-		struct ReadHelper<std::uint8_t *>
-		{
-			static bool read(ParameterGroupBuilder *that, std::uint8_t *&data)
-			{
-				// Read until NULL.
-				std::size_t revert = that->readOffset;
-				// Don't modify `data`!
-				std::uint8_t *ptr = data;
-				for (;;)
-				{
-					if (!that->read_bits(ptr, 8))
-					{
-						that->readOffset = revert;
-						*data = '\0';
-						return false;
-					}
-					if (*ptr == 0)
-					{
-						// Found a NULL byte.
-						break;
-					}
-					++ptr;
-				}
-				return true;
-			}
-		};
+		friend struct detail::ReadHelper;
 
 		template<typename T>
-		struct BitsHelper
-		{
-			static bool read(ParameterGroupBuilder *that, T &data, std::size_t bits)
-			{
-				// Clear the memory, since we may not be reading the full width.
-				memset(&data, 0, sizeof(T));
-				return that->read_bits((std::uint8_t *)&data, bits);
-			}
-		};
-
-		template<>
-		struct BitsHelper<char *>
-		{
-			static bool read(ParameterGroupBuilder *that, char *&data, std::size_t bits)
-			{
-				// It is a bit awkward to specify how much of a string to read.
-				return BitsHelper<std::uint8_t *>::read(that, (std::uint8_t *&)data, bits);
-			}
-		};
-
-		template<>
-		struct BitsHelper<std::uint8_t *>
-		{
-			static bool read(ParameterGroupBuilder *that, std::uint8_t *&data, std::size_t bits)
-			{
-				if (bits % 8 != 0)
-				{
-					// This requires normal string sizes.
-					return false;
-				}
-				// Don't modify `data`!
-				std::uint8_t *ptr = data;
-				// Don't write NULL, just assume the caller handles that.
-				std::size_t revert = that->readOffset;
-				while (bits)
-				{
-					if (!that->read_bits(ptr, 8))
-					{
-						that->readOffset = revert;
-						*data = '\0';
-						return false;
-					}
-					bits -= 8;
-					++ptr;
-				}
-				return true;
-			}
-		};
+		friend struct detail::BitsHelper;
 
 	public:
 		ParameterGroupBuilder() :
@@ -428,7 +277,7 @@ namespace isobus
 		template <typename T>
 		bool write(T const & data)
 		{
-			return WriterHelper<T>::write(this, data);
+			return detail::WriterHelper<T>::write(this, data);
 		}
 
 		template <typename T>
@@ -516,13 +365,13 @@ namespace isobus
 		template <typename T>
 		bool read(T & data)
 		{
-			return ReadHelper<T>::read(this, data);
+			return detail::ReadHelper<T>::read(this, data);
 		}
 		
 		template <typename T>
 		bool read(T & data, std::size_t bits)
 		{
-			return BitsHelper<T>::read(this, data, bits);
+			return detail::BitsHelper<T>::read(this, data, bits);
 		}
 
 		bool skip(std::size_t bits)
@@ -565,5 +414,180 @@ namespace isobus
 			buffer.clear();
 		}
 	};
+
+	namespace detail
+	{
+		template<typename T>
+		struct WriterHelper
+		{
+			static bool write(ParameterGroupBuilder *that, T const &data)
+			{
+				return that->write_bits((std::uint8_t const *)&data, sizeof(T) * 8);
+			}
+		};
+
+		template<>
+		struct WriterHelper<bool>
+		{
+			static bool write(ParameterGroupBuilder *that, bool const &data)
+			{
+				std::uint8_t bits = data ? 255 : 0;
+				return that->write_bits(&bits, 1);
+			}
+		};
+
+		template<>
+		struct WriterHelper<char const *>
+		{
+			static bool write(ParameterGroupBuilder *that, char const *const &data)
+			{
+				// What should the default for including NULL be?
+				return that->write((std::uint8_t const *)data, false);
+			}
+		};
+
+		template<>
+		struct WriterHelper<char *>
+		{
+			static bool write(ParameterGroupBuilder *that, char *const &data)
+			{
+				// What should the default for including NULL be?
+				return that->write((std::uint8_t const *)data, false);
+			}
+		};
+
+		template<>
+		struct WriterHelper<std::uint8_t const *>
+		{
+			static bool write(ParameterGroupBuilder *that, std::uint8_t const *const &data)
+			{
+				// What should the default for including NULL be?
+				return that->write((std::uint8_t const *)data, false);
+			}
+		};
+
+		template<>
+		struct WriterHelper<std::uint8_t *>
+		{
+			static bool write(ParameterGroupBuilder *that, std::uint8_t *const &data)
+			{
+				// What should the default for including NULL be?
+				return that->write((std::uint8_t const *)data, false);
+			}
+		};
+
+		template<typename T>
+		struct ReadHelper
+		{
+			static bool read(ParameterGroupBuilder *that, T &data)
+			{
+				return that->read_bits((std::uint8_t *)&data, sizeof(T) * 8);
+			}
+		};
+
+		template<>
+		struct ReadHelper<bool>
+		{
+			static bool read(ParameterGroupBuilder *that, bool &data)
+			{
+				std::uint8_t bits = 0;
+				if (that->read_bits(&bits, 1))
+				{
+					data = !!bits;
+					return true;
+				}
+				data = false;
+				return false;
+			}
+		};
+
+		template<>
+		struct ReadHelper<std::uint8_t *>
+		{
+			static bool read(ParameterGroupBuilder *that, std::uint8_t *&data)
+			{
+				// Read until NULL.
+				std::size_t revert = that->readOffset;
+				// Don't modify `data`!
+				std::uint8_t *ptr = data;
+				for (;;)
+				{
+					if (!that->read_bits(ptr, 8))
+					{
+						that->readOffset = revert;
+						*data = '\0';
+						return false;
+					}
+					if (*ptr == 0)
+					{
+						// Found a NULL byte.
+						break;
+					}
+					++ptr;
+				}
+				return true;
+			}
+		};
+
+		template<>
+		struct ReadHelper<char *>
+		{
+			static bool read(ParameterGroupBuilder *that, char *&data)
+			{
+				// Read until NULL.
+				return ReadHelper<std::uint8_t *>::read(that, (std::uint8_t *&)data);
+			}
+		};
+
+		template<typename T>
+		struct BitsHelper
+		{
+			static bool read(ParameterGroupBuilder *that, T &data, std::size_t bits)
+			{
+				// Clear the memory, since we may not be reading the full width.
+				memset(&data, 0, sizeof(T));
+				return that->read_bits((std::uint8_t *)&data, bits);
+			}
+		};
+
+		template<>
+		struct BitsHelper<std::uint8_t *>
+		{
+			static bool read(ParameterGroupBuilder *that, std::uint8_t *&data, std::size_t bits)
+			{
+				if (bits % 8 != 0)
+				{
+					// This requires normal string sizes.
+					return false;
+				}
+				// Don't modify `data`!
+				std::uint8_t *ptr = data;
+				// Don't write NULL, just assume the caller handles that.
+				std::size_t revert = that->readOffset;
+				while (bits)
+				{
+					if (!that->read_bits(ptr, 8))
+					{
+						that->readOffset = revert;
+						*data = '\0';
+						return false;
+					}
+					bits -= 8;
+					++ptr;
+				}
+				return true;
+			}
+		};
+
+		template<>
+		struct BitsHelper<char *>
+		{
+			static bool read(ParameterGroupBuilder *that, char *&data, std::size_t bits)
+			{
+				// It is a bit awkward to specify how much of a string to read.
+				return BitsHelper<std::uint8_t *>::read(that, (std::uint8_t *&)data, bits);
+			}
+		};
+	}
 }
 
