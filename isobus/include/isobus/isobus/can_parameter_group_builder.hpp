@@ -279,6 +279,119 @@ namespace isobus
 			}
 		};
 
+		template<typename T>
+		struct ReadHelper
+		{
+			static bool read(ParameterGroupBuilder *that, T &data)
+			{
+				return that->read_bits((std::uint8_t *)&data, sizeof(T) * 8);
+			}
+		};
+
+		template<>
+		struct ReadHelper<bool>
+		{
+			static bool read(ParameterGroupBuilder *that, bool &data)
+			{
+				std::uint8_t bits = 0;
+				if (that->read_bits(&bits, 1))
+				{
+					data = !!bits;
+					return true;
+				}
+				data = false;
+				return false;
+			}
+		};
+
+		template<>
+		struct ReadHelper<char *>
+		{
+			static bool read(ParameterGroupBuilder *that, char *&data)
+			{
+				// Read until NULL.
+				return ReadHelper<std::uint8_t *>::read(that, (std::uint8_t *&)data);
+			}
+		};
+
+		template<>
+		struct ReadHelper<std::uint8_t *>
+		{
+			static bool read(ParameterGroupBuilder *that, std::uint8_t *&data)
+			{
+				// Read until NULL.
+				std::size_t revert = that->readOffset;
+				// Don't modify `data`!
+				std::uint8_t *ptr = data;
+				for (;;)
+				{
+					if (!that->read_bits(ptr, 8))
+					{
+						that->readOffset = revert;
+						*data = '\0';
+						return false;
+					}
+					if (*ptr == 0)
+					{
+						// Found a NULL byte.
+						break;
+					}
+					++ptr;
+				}
+				return true;
+			}
+		};
+
+		template<typename T>
+		struct BitsHelper
+		{
+			static bool read(ParameterGroupBuilder *that, T &data, std::size_t bits)
+			{
+				// Clear the memory, since we may not be reading the full width.
+				memset(&data, 0, sizeof(T));
+				return that->read_bits((std::uint8_t *)&data, bits);
+			}
+		};
+
+		template<>
+		struct BitsHelper<char *>
+		{
+			static bool read(ParameterGroupBuilder *that, char *&data, std::size_t bits)
+			{
+				// It is a bit awkward to specify how much of a string to read.
+				return BitsHelper<std::uint8_t *>::read(that, (std::uint8_t *&)data, bits);
+			}
+		};
+
+		template<>
+		struct BitsHelper<std::uint8_t *>
+		{
+			static bool read(ParameterGroupBuilder *that, std::uint8_t *&data, std::size_t bits)
+			{
+				if (bits % 8 != 0)
+				{
+					// This requires normal string sizes.
+					return false;
+				}
+				// Don't modify `data`!
+				std::uint8_t *ptr = data;
+				// Don't write NULL, just assume the caller handles that.
+				std::size_t revert = that->readOffset;
+				while (bits)
+				{
+					if (!that->read_bits(ptr, 8))
+					{
+						that->readOffset = revert;
+						*data = '\0';
+						return false;
+					}
+					bits -= 8;
+					++ptr;
+				}
+				return true;
+			}
+		};
+
 	public:
 		ParameterGroupBuilder() :
 		  buffer()
@@ -403,93 +516,13 @@ namespace isobus
 		template <typename T>
 		bool read(T & data)
 		{
-			return read_bits((std::uint8_t *)&data, sizeof (T) * 8);
+			return ReadHelper<T>::read(this, data);
 		}
-
+		
 		template <typename T>
 		bool read(T & data, std::size_t bits)
 		{
-			// Clear the memory, since we may not be reading the full width.
-			memset(&data, 0, sizeof(T));
-			return read_bits((std::uint8_t *)&data, bits);
-		}
-
-		template <>
-		bool read<bool>(bool & data)
-		{
-			std::uint8_t bits = 0;
-			if (read_bits(&bits, 1))
-			{
-				data = !!bits;
-				return true;
-			}
-			data = false;
-			return false;
-		}
-
-		template <>
-		bool read<char *>(char * & data)
-		{
-			// Read until NULL.
-			return read<std::uint8_t*>((std::uint8_t * &)data);
-		}
-
-		template <>
-		bool read<std::uint8_t *>(std::uint8_t * & data)
-		{
-			// Read until NULL.
-			std::size_t revert = readOffset;
-			// Don't modify `data`!
-			std::uint8_t * ptr = data;
-			for ( ; ; )
-			{
-				if (!read_bits(ptr, 8))
-				{
-					readOffset = revert;
-					*data = '\0';
-					return false;
-				}
-				if (*ptr == 0)
-				{
-					// Found a NULL byte.
-					break;
-				}
-				++ptr;
-			}
-			return true;
-		}
-
-		template <>
-		bool read<char *>(char * & data, std::size_t bits)
-		{
-			// It is a bit awkward to specify how much of a string to read.
-			return read((std::uint8_t * &)data, bits);
-		}
-
-		template <>
-		bool read<std::uint8_t *>(std::uint8_t * & data, std::size_t bits)
-		{
-			if (bits % 8 != 0)
-			{
-				// This requires normal string sizes.
-				return false;
-			}
-			// Don't modify `data`!
-			std::uint8_t * ptr = data;
-			// Don't write NULL, just assume the caller handles that.
-			std::size_t revert = readOffset;
-			while (bits)
-			{
-				if (!read_bits(ptr, 8))
-				{
-					readOffset = revert;
-					*data = '\0';
-					return false;
-				}
-				bits -= 8;
-				++ptr;
-			}
-			return true;
+			return BitsHelper<T>::read(this, data, bits);
 		}
 
 		bool skip(std::size_t bits)
