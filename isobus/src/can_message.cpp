@@ -32,6 +32,11 @@ namespace isobus
 	{
 		return data;
 	}
+	
+	std::vector<std::uint8_t> const &CANMessage::get_data() const
+	{
+		return data;
+	}
 
 	std::uint32_t CANMessage::get_data_length() const
 	{
