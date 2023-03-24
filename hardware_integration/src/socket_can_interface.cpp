@@ -142,8 +142,8 @@ bool SocketCANInterface::read_frame(isobus::HardwareInterfaceCANFrame &canFrame)
 					canFrame.isExtendedFrame = true;
 					uint32_t id = canFrame.identifier;
 					uint32_t pgn = ((0x00F00000 & id) < 0x00F00000) ? ((id >> 8) & 0x0003FF00) : ((id >> 8) & 0x0003FFFF);
-					uint32_t src = ((0x00F00000 & id) < 0x00F00000) ? (m_RawIdentifier & 0xFF) : 0xFF;
-					uint32_t dst = ((0x00F00000 & id) < 0x00F00000) ? ((m_RawIdentifier >> 8) & 0xFF) : 0xFF;
+					uint32_t src = ((0x00F00000 & id) < 0x00F00000) ? (id & 0xFF) : 0xFF;
+					uint32_t dst = ((0x00F00000 & id) < 0x00F00000) ? ((id >> 8) & 0xFF) : 0xFF;
 					printf("LONG: 0x%08x\n\t- PGN: 0x%04x\n\t- SRC: 0x%02x\n\t- DST: 0x%02x\n", id, pgn, src, dst);
 				}
 				else
