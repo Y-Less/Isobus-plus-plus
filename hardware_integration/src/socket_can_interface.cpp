@@ -9,6 +9,7 @@
 #include "isobus/hardware_integration/socket_can_interface.hpp"
 #include "isobus/isobus/can_stack_logger.hpp"
 #include "isobus/utility/system_timing.hpp"
+#include "isobus/isobus/can_NAME.hpp"
 
 #include <linux/can.h>
 #include <linux/can/raw.h>
@@ -185,6 +186,19 @@ bool SocketCANInterface::read_frame(isobus::HardwareInterfaceCANFrame &canFrame)
 					break;
 				case 8:
 					printf("\t- DAT: %02x %02x %02x %02x %02x %02x %02x %02x\n", canFrame.data[0], canFrame.data[1], canFrame.data[2], canFrame.data[3], canFrame.data[4], canFrame.data[5], canFrame.data[6], canFrame.data[7]);
+					{
+						std::uint64_t claimedNAME;
+						claimedNAME = canFrame.data[0];
+						claimedNAME |= (static_cast<std::uint64_t>(canFrame.data[1]) << 8);
+						claimedNAME |= (static_cast<std::uint64_t>(canFrame.data[2]) << 16);
+						claimedNAME |= (static_cast<std::uint64_t>(canFrame.data[3]) << 24);
+						claimedNAME |= (static_cast<std::uint64_t>(canFrame.data[4]) << 32);
+						claimedNAME |= (static_cast<std::uint64_t>(canFrame.data[5]) << 40);
+						claimedNAME |= (static_cast<std::uint64_t>(canFrame.data[6]) << 48);
+						claimedNAME |= (static_cast<std::uint64_t>(canFrame.data[7]) << 56);
+						isobus::NAME nn(claimedName);
+						printf("\t- NAM: %d, %02x, %02x, %02x, %02x, %02x, %02x, %04x, %08x\n", nn.get_arbitrary_address_capable(), nn.get_industry_group(), nn.get_device_class_instance(), nn.get_device_class(), nn.get_function_code(), nn.get_function_instance(), nn.get_ecu_instance(), nn.get_manufacturer_code(), nn.get_identity_number());
+					}
 					break;
 				}
 
