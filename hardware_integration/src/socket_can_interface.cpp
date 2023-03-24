@@ -140,15 +140,54 @@ bool SocketCANInterface::read_frame(isobus::HardwareInterfaceCANFrame &canFrame)
 				{
 					canFrame.identifier = (txFrame.can_id & CAN_EFF_MASK);
 					canFrame.isExtendedFrame = true;
+					uint32_t id = canFrame.identifier;
+					uint32_t pgn = ((0x00F00000 & id) < 0x00F00000) ? ((id >> 8) & 0x0003FF00) : ((id >> 8) & 0x0003FFFF);
+					uint32_t src = ((0x00F00000 & id) < 0x00F00000) ? (m_RawIdentifier & 0xFF) : 0xFF;
+					uint32_t dst = ((0x00F00000 & id) < 0x00F00000) ? ((m_RawIdentifier >> 8) & 0xFF) : 0xFF;
+					printf("LONG: 0x%08x\n\t- PGN: 0x%04x\n\t- SRC: 0x%02x\n\t- DST: 0x%02x\n", id, pgn, src, dst);
 				}
 				else
 				{
 					canFrame.identifier = (txFrame.can_id & CAN_SFF_MASK);
 					canFrame.isExtendedFrame = false;
+					uint32_t id = canFrame.identifier;
+					printf("SHORT: 0x%04x\n", id);
 				}
 				canFrame.dataLength = txFrame.can_dlc;
 				memset(canFrame.data, 0, sizeof(canFrame.data));
 				memcpy(canFrame.data, txFrame.data, canFrame.dataLength);
+
+				switch (canFrame.dataLength)
+				{
+				case 0:
+					printf("\t- DAT: \n");
+					break;
+				case 1:
+					printf("\t- DAT: %02x\n", canFrame.data[0]);
+					break;
+				case 2:
+					printf("\t- DAT: %02x %02x\n", canFrame.data[0], canFrame.data[1]);
+					break;
+				case 3:
+					printf("\t- DAT: %02x %02x %02x\n", canFrame.data[0], canFrame.data[1], canFrame.data[2]);
+					break;
+				case 4:
+					printf("\t- DAT: %02x %02x %02x %02x\n", canFrame.data[0], canFrame.data[1], canFrame.data[2], canFrame.data[3]);
+					break;
+				case 5:
+					printf("\t- DAT: %02x %02x %02x %02x %02x\n", canFrame.data[0], canFrame.data[1], canFrame.data[2], canFrame.data[3], canFrame.data[4]);
+					break;
+				case 6:
+					printf("\t- DAT: %02x %02x %02x %02x %02x %02x\n", canFrame.data[0], canFrame.data[1], canFrame.data[2], canFrame.data[3], canFrame.data[4], canFrame.data[5]);
+					break;
+				case 7:
+					printf("\t- DAT: %02x %02x %02x %02x %02x %02x %02x\n", canFrame.data[0], canFrame.data[1], canFrame.data[2], canFrame.data[3], canFrame.data[4], canFrame.data[5], canFrame.data[6]);
+					break;
+				case 8:
+					printf("\t- DAT: %02x %02x %02x %02x %02x %02x %02x %02x\n", canFrame.data[0], canFrame.data[1], canFrame.data[2], canFrame.data[3], canFrame.data[4], canFrame.data[5], canFrame.data[6], canFrame.data[7]);
+					break;
+				}
+
 				for (struct cmsghdr *pControlMessage = CMSG_FIRSTHDR(&message); (nullptr != pControlMessage) && (SOL_SOCKET == pControlMessage->cmsg_level); pControlMessage = CMSG_NXTHDR(&message, pControlMessage))
 				{
 					switch (pControlMessage->cmsg_type)
