@@ -196,7 +196,7 @@ bool SocketCANInterface::read_frame(isobus::HardwareInterfaceCANFrame &canFrame)
 						claimedNAME |= (static_cast<std::uint64_t>(canFrame.data[5]) << 40);
 						claimedNAME |= (static_cast<std::uint64_t>(canFrame.data[6]) << 48);
 						claimedNAME |= (static_cast<std::uint64_t>(canFrame.data[7]) << 56);
-						isobus::NAME nn(claimedName);
+						isobus::NAME nn(claimedNAME);
 						printf("\t- NAM:\n\n\t\t\tarbitrary_address_capable: %d\n\t\t\tindustry_group           : %02x\n\t\t\tdevice_class_instance    : %02x\n\t\t\tdevice_class             : %02x\n\t\t\tfunction_code            : %02x\n\t\t\tfunction_instance        : %02x\n\t\t\tecu_instance             : %02x\n\t\t\tmanufacturer_code        : %04x\n\t\t\tidentity_number          : %08x\n\n", nn.get_arbitrary_address_capable(), nn.get_industry_group(), nn.get_device_class_instance(), nn.get_device_class(), nn.get_function_code(), nn.get_function_instance(), nn.get_ecu_instance(), nn.get_manufacturer_code(), nn.get_identity_number());
 					}
 					break;
