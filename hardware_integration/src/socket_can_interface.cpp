@@ -137,6 +137,7 @@ bool SocketCANInterface::read_frame(isobus::HardwareInterfaceCANFrame &canFrame)
 		{
 			if (0 == (txFrame.can_id & CAN_ERR_FLAG))
 			{
+				bool printtt = false;
 				if (0 != (txFrame.can_id & CAN_EFF_FLAG))
 				{
 					canFrame.identifier = (txFrame.can_id & CAN_EFF_MASK);
@@ -145,20 +146,22 @@ bool SocketCANInterface::read_frame(isobus::HardwareInterfaceCANFrame &canFrame)
 					uint32_t pgn = ((0x00F00000 & id) < 0x00F00000) ? ((id >> 8) & 0x0003FF00) : ((id >> 8) & 0x0003FFFF);
 					uint32_t src = ((0x00F00000 & id) < 0x00F00000) ? (id & 0xFF) : 0xFF;
 					uint32_t dst = ((0x00F00000 & id) < 0x00F00000) ? ((id >> 8) & 0xFF) : 0xFF;
-					printf("LONG: 0x%08x\n\t- PGN: 0x%04x\n\t- SRC: 0x%02x\n\t- DST: 0x%02x\n", id, pgn, src, dst);
+					if (printtt) printf("LONG: 0x%08x\n\t- PGN: 0x%04x\n\t- SRC: 0x%02x\n\t- DST: 0x%02x\n", id, pgn, src, dst);
 				}
 				else
 				{
 					canFrame.identifier = (txFrame.can_id & CAN_SFF_MASK);
 					canFrame.isExtendedFrame = false;
 					uint32_t id = canFrame.identifier;
-					printf("SHORT: 0x%04x\n", id);
+					printtt = id == 0x0283 || id == 0x020b;
+					printtt = false;
+					if (printtt) printf("SHORT: 0x%04x\n", id);
 				}
 				canFrame.dataLength = txFrame.can_dlc;
 				memset(canFrame.data, 0, sizeof(canFrame.data));
 				memcpy(canFrame.data, txFrame.data, canFrame.dataLength);
 
-				switch (canFrame.dataLength)
+				if (printtt) switch (canFrame.dataLength)
 				{
 				case 0:
 					printf("\t- DAT: \n");
