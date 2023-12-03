@@ -973,11 +973,12 @@ namespace isobus
 			// Message destined to global
 			for (std::size_t i = 0; i < get_number_global_parameter_group_number_callbacks(); i++)
 			{
-				if ((message.get_identifier().get_parameter_group_number() == get_global_parameter_group_number_callback(i).get_parameter_group_number()) &&
-				    (nullptr != get_global_parameter_group_number_callback(i).get_callback()))
+				auto glb = get_global_parameter_group_number_callback(i);
+				if ((message.get_identifier().get_parameter_group_number() == glb.get_parameter_group_number()) &&
+				    (nullptr != glb.get_callback()))
 				{
 					// We have a callback that matches this PGN
-					get_global_parameter_group_number_callback(i).get_callback()(message, get_global_parameter_group_number_callback(i).get_parent());
+					glb.get_callback()(message, glb.get_parent());
 				}
 			}
 		}
