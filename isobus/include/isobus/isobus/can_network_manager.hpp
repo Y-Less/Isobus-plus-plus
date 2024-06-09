@@ -87,7 +87,7 @@ namespace isobus
 		/// @param[in] callback The callback that will be called when parameterGroupNumber is received from the global address (0xFF)
 		/// @param[in] parent A generic context variable that helps identify what object the callback is destined for. Can be nullptr if you don't want to use it.
 		/// @param[in] internalControlFunction An optional internal function destination to filter messages by
-		void add_global_parameter_group_number_callback(std::uint32_t parameterGroupNumber, CANLibCallback callback, void *parent, std::shared_ptr<InternalControlFunction> std::shared_ptr<InternalControlFunction> internalControlFunction = nullptr);
+		void add_global_parameter_group_number_callback(std::uint32_t parameterGroupNumber, CANLibCallback callback, void *parent, std::shared_ptr<InternalControlFunction> internalControlFunction = nullptr);
 
 		/// @brief This is how you remove a callback for any PGN destined for the global address (0xFF)
 		/// @param[in] parameterGroupNumber The PGN of the callback to remove
