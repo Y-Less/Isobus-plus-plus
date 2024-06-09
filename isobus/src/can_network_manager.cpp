@@ -994,7 +994,7 @@ namespace isobus
 					for (std::size_t k = 0; k < partner->get_number_parameter_group_number_callbacks(); k++)
 					{
 						const ParameterGroupNumberCallbackData &callbackData = partner->get_parameter_group_number_callback(k);
-						if ((message->get_identifier().get_parameter_group_number() == callbackData.get_parameter_group_number()) &&
+						if ((message.get_identifier().get_parameter_group_number() == callbackData.get_parameter_group_number()) &&
 						    (nullptr != callbackData.get_callback()) &&
 						    ((nullptr == callbackData.get_internal_control_function()) ||
 						    (callbackData.get_internal_control_function()->get_address() == message.get_identifier().get_destination_address())))
