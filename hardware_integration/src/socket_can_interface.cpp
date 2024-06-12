@@ -28,7 +28,20 @@ namespace isobus
 	SocketCANInterface::SocketCANInterface(const std::string deviceName) :
 	  pCANDevice(new sockaddr_can),
 	  name(deviceName),
-	  fileDescriptor(-1)
+	  fileDescriptor(-1),
+	  baud(0)
+	{
+		if (nullptr != pCANDevice)
+		{
+			std::memset(pCANDevice, 0, sizeof(struct sockaddr_can));
+		}
+	}
+
+	SocketCANInterface::SocketCANInterface(const std::string deviceName, int baudRate) :
+	  pCANDevice(new sockaddr_can),
+	  name(deviceName),
+	  fileDescriptor(-1),
+	  baud(baudRate)
 	{
 		if (nullptr != pCANDevice)
 		{
@@ -61,10 +74,23 @@ namespace isobus
 	{
 		::close(fileDescriptor);
 		fileDescriptor = -1;
+		if (0 != baud)
+		{
+			std::string link("sudo ip link set ");
+			system((link + name + " down").c_str());
+		}
 	}
 
 	void SocketCANInterface::open()
 	{
+		if (0 != baud)
+		{
+			std::string link("sudo ip link set ");
+			system((link + name + " down").c_str());
+			system((link + name + " type can bitrate " + baud).c_str());
+			system((link + name + " up").c_str());
+		}
+
 		fileDescriptor = socket(PF_CAN, SOCK_RAW, CAN_RAW);
 
 		if (fileDescriptor >= 0)
@@ -188,6 +214,12 @@ namespace isobus
 		{
 			close();
 		}
+		else if (0 != baud)
+		{
+			// Poll timed out.  Restart the hardware.
+			close();
+			open();
+		}
 		return retVal;
 	}
 
@@ -213,6 +245,12 @@ namespace isobus
 		{
 			LOG_CRITICAL("[SocketCAN] " + get_device_name() + " interface is down.");
 			close();
+		}
+		else if (0 != baud)
+		{
+			// Unknown write fail.  Restart the hardware.
+			close();
+			open();
 		}
 		return retVal;
 	}

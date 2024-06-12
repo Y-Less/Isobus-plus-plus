@@ -32,6 +32,11 @@ namespace isobus
 		/// @param[in] deviceName The device name to use, like "can0" or "vcan0"
 		explicit SocketCANInterface(const std::string deviceName);
 
+		/// @brief Constructor for the socket CAN driver
+		/// @param[in] deviceName The device name to use, like "can0" or "vcan0"
+		/// @param[in] baudRate The baud rate to open the link on.  Will force `ip link` commands.
+		explicit SocketCANInterface(const std::string deviceName, int baudRate);
+
 		/// @brief The destructor for SocketCANInterface
 		virtual ~SocketCANInterface();
 
@@ -68,6 +73,7 @@ namespace isobus
 		struct sockaddr_can *pCANDevice; ///< The structure for CAN sockets
 		std::string name; ///< The device name
 		int fileDescriptor; ///< File descriptor for the socket
+		int baud; ///< Baud rate used if initialising device
 	};
 }
 #endif // SOCKET_CAN_INTERFACE_HPP
