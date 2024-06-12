@@ -22,6 +22,7 @@
 #include <cstdint>
 #include <cstring>
 #include <limits>
+#include <sstream>
 
 namespace isobus
 {
@@ -76,8 +77,9 @@ namespace isobus
 		fileDescriptor = -1;
 		if (0 != baud)
 		{
-			std::string link("sudo ip link set ");
-			system((link + name + " down").c_str());
+			std::ostringstream s;
+			s << "sudo ip link set " << name << " down";
+			system(s.str().c_str());
 		}
 	}
 
@@ -85,10 +87,21 @@ namespace isobus
 	{
 		if (0 != baud)
 		{
-			std::string link("sudo ip link set ");
-			system((link + name + " down").c_str());
-			system((link + name + " type can bitrate " + baud).c_str());
-			system((link + name + " up").c_str());
+			{
+				std::ostringstream s;
+				s << "sudo ip link set " << name << " down";
+				system(s.str().c_str());
+			}
+			{
+				std::ostringstream s;
+				s << "sudo ip link set " << name << " type can bitrate " << baud;
+				system(s.str().c_str());
+			}
+			{
+				std::ostringstream s;
+				s << "sudo ip link set " << name << " up";
+				system(s.str().c_str());
+			}
 		}
 
 		fileDescriptor = socket(PF_CAN, SOCK_RAW, CAN_RAW);
