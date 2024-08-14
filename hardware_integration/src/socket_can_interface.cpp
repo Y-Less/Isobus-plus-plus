@@ -232,6 +232,9 @@ namespace isobus
 			// Poll timed out.  Restart the hardware.
 			close();
 			open();
+			
+			// Wait for the network to be fully up.
+			std::this_thread::sleep_for(std::chrono::milliseconds(250));
 		}
 		return retVal;
 	}
@@ -264,6 +267,9 @@ namespace isobus
 			// Unknown write fail.  Restart the hardware.
 			close();
 			open();
+			
+			// Wait for the network to be fully up.
+			std::this_thread::sleep_for(std::chrono::milliseconds(250));
 		}
 		return retVal;
 	}
