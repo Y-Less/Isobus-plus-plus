@@ -23,6 +23,7 @@
 #include <cstring>
 #include <limits>
 #include <sstream>
+#include <thread>
 
 namespace isobus
 {
